@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/bin/python3
+#!/usr/bin/env python3
 # vim: set fileencoding=utf-8:
 
 import os
@@ -6,6 +6,9 @@ import re
 import argparse
 import hashlib
 import magic
+
+from fontTools import ttLib
+from PIL import Image
 
 # {{{ Arguments
 
@@ -86,6 +89,20 @@ class Module:
     def map(self, file_name):
         raise Exception('not implemented')
 
+class ImageModule(Module):
+
+    def __init__(self, args):
+        super().__init__(args)
+
+    def map(self, file_name):
+        img = Image.open(file_name)
+        width, height = img.size
+        return {
+            'height': height,
+            'width': width,
+            'ratio': width/height,
+        }
+
 class NumberModule(Module):
 
     def __init__(self, args):
@@ -150,7 +167,7 @@ class StatModule(Module):
 
 class MimeModule(Module):
 
-    EXTENSION_MAP = {
+    EXTENSIONS = {
         'image/jpeg': '.jpg',
         'image/png': '.png',
         'image/gif': '.gif',
@@ -179,21 +196,64 @@ class MimeModule(Module):
         mime = self.mime.from_file(file_name)
         if not mime:
             raise Exception('unable to guess mimetype')
-        if not mime in MimeModule.EXTENSION_MAP:
+        if not mime in MimeModule.EXTENSIONS:
             raise Exception('unable to map extension: {}'.format(mime))
-        return {'mime': MimeModule.EXTENSION_MAP[mime]}
+        return {'mime': MimeModule.EXTENSIONS[mime]}
+
+class FontModule(Module):
+
+    FONT_SPECIFIER_FAMILY_ID = 1
+    FONT_SPECIFIER_WEIGHT_ID = 2
+    FONT_SPECIFIER_STRING_ID = 3
+    FONT_SPECIFIER_NAME_ID   = 4
+
+    EXTENSIONS = {
+        '.ttf': ttLib.TTFont,
+    }
+
+    def map(self, file_name):
+        name, extension = os.path.splitext(file_name)
+        font = FontModule.EXTENSIONS[extension]
+        family, weight, string, name  = self.short_name(font(file_name))
+        return {
+            'font_family': family,
+            'font_weight': weight,
+            'font_string': string,
+            'font_name':   name,
+        }
+
+    def decode_record(self, record):
+        if b'\x00' in record.string: return record.string.decode('utf-16-be')
+        else:                        return record.string.decode('utf-8')
+
+    def short_name(self, font):
+        """Get the short name from the font's names table"""
+        name = ""
+        string = ""
+        family = ""
+        weight = ""
+        for record in font['name'].names:
+            decoded = self.decode_record(record)
+            if   record.nameID == FontModule.FONT_SPECIFIER_FAMILY_ID and not family: family = decoded
+            elif record.nameID == FontModule.FONT_SPECIFIER_WEIGHT_ID and not weight: weight = decoded
+            elif record.nameID == FontModule.FONT_SPECIFIER_STRING_ID and not weight: string = decoded
+            elif record.nameID == FontModule.FONT_SPECIFIER_NAME_ID   and not name:   name   = decoded
+            if string and family and weight and name: break
+        return family, weight, string, name
 
 # }}}
 # {{{ Main
 
 class Rename:
 
-    MODULE_MAPPING = {
+    MODULES = {
         'number': NumberModule,
         'regex': RegexModule,
         'hash': HashModule,
         'mime': MimeModule,
         'stat': StatModule,
+        'font': FontModule,
+        'image': ImageModule,
     }
 
     def __init__(self, args):
@@ -202,9 +262,9 @@ class Rename:
 
         if args.module:
             for module in args.module:
-                if not module in self.MODULE_MAPPING:
+                if not module in self.MODULES:
                     raise Exception('unknown module: {}'.format(module))
-                constructor = self.MODULE_MAPPING[module]
+                constructor = self.MODULES[module]
                 self.modules.append(constructor(args))
 
     def file_name(self, file_name):
