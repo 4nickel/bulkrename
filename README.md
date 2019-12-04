@@ -1,25 +1,21 @@
-# Bulkrename
+# bulkrename
 
-&nbsp;
-> I wrote this for personal usage - it is simple enough and has proven useful. I'd be happy to hear your feedback and ideas for improvement. Cheers!
+> I wrote this for personal use - it is simple enough and has proven useful. I'd be happy to hear your feedback and ideas for improvement. Cheers!
 
-&nbsp;
+The core feature is a modular, dynamic approach to generating filenames. In order to keep a good performance profile modules must be enabled explicitly to be used. Many modules accept additional flags to control their output.
 
-The main idea is to have a modular, dynamic approach to generating filenames. In order to keep a good performance profile, modules must be enabled explicitly to be used. Many modules accept additional flags to control their output.
+The tool ships with a variety of specialized modules for renaming e.g. fonts or images, and more general ones - such as content-digests, simple counters or regex captures.
 
-The tool ships with a variety of specialized modules for renaming e.g. fonts or images, and more general ones - such as content-digests, simple counters or regex captures. By default, planned changes are only printed, and no action is taken. Pass ``--commit`` to actually rename any files.
 
-Usage:
+#### Usage
 ```sh
-bulkrename -[vq] -c -l LIMIT -m MODULE <OPTIONS> -f FORMAT -- [FILE [FILE..]]
+bulkrename -[vqc] [-l LIMIT] [-m MODULE ARGS] [-f FORMAT] [FILE [FILE..]]
 bulkrename --help
 ```
 
-Files are renamed in accordance with the given ``FORMAT`` string.
+Files are renamed in accordance with the given ``FORMAT`` string. If no ``FORMAT`` is specified, the output will exactly match the input. By default no action is taken and a list of planned changes is printed. Pass ``--commit`` to actually rename files.
 
-
-
-#### Examples
+### Examples
 
 Add prefix/suffix:
 ```sh
@@ -56,7 +52,7 @@ Image width and height:
 bulkrename -m image -f '{name}_{width}x{height}{ext}' -- ..files..
 ```
 
-#### Module Overview:
+### Modules
 Module | Description | Arguments | &nbsp;
 --- | --- | --- | ---
 hash | Content digest |  --algorithm [md5\|sha256]   | Select algorithm
@@ -67,38 +63,38 @@ stat | Unix file stat command | |
 image | Image dimensions | |
 font | Font information | |
 
-#### Formatting
+### Formatting
 
-##### default:
+#### default
 
 Format | Description
 --- | ---
 name | Contains the original file name, without extension
 ext  | Contains the original extension. May be empty
 
-##### hash:
+#### hash
 
 Format | Description
 --- | ---
 hash | The content digest
 
-##### mime:
+#### mime
 
 Format | Description
 --- | ---
 mime | Best-effort guess of the MIME-type. May be incorrect!
 
-##### number:
+#### number
 
 Format | Description
 --- | ---
 number | The number N of the file
 
-##### regex:
+#### regex
 
 > The regex will be run against every file name. You can access any *named* capture group in the format string. Very flexible and powerful.
 
-##### stat:
+#### stat
 
 Format | Description
 --- | ---
@@ -113,7 +109,7 @@ atime | Last accest time
 mtime | Last modification time
 ctime | Birth time
 
-##### image:
+#### image
 
 Format | Description
 --- | ---
@@ -121,6 +117,6 @@ width | The width of the image file in pixels
 height | The height of the image file in pixels
 ratio | The ratio of width to height
 
-#### TODO:
+##### TODO
 * More modules
 * Add tests
