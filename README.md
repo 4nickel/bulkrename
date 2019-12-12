@@ -1,12 +1,10 @@
 # bulkrename
 
-> I wrote this for personal use - it is simple enough and has proven useful. I'd be happy to hear your feedback and ideas for improvement. Cheers!
+The underlying design features a modular, dynamic approach to generating filenames and ships with a variety of specialized modules for renaming e.g. fonts or images, and more general ones - such as content-digests, simple counters or regex captures.
 
-The core feature is a modular, dynamic approach to generating filenames. In order to keep a good performance profile modules must be enabled explicitly to be used. Many modules accept additional flags to control their output.
+See the [examples](#examples) below, to get an idea of how everything works!
 
-The tool ships with a variety of specialized modules for renaming e.g. fonts or images, and more general ones - such as content-digests, simple counters or regex captures.
-
-### Usage
+## Usage
 
 ```sh
 bulkrename -[vqc] [-l LIMIT] [-m MODULE ARGS] [-f FORMAT] [FILE [FILE..]]
@@ -14,6 +12,16 @@ bulkrename --help
 ```
 
 Files are renamed in accordance with the given ``FORMAT`` string. If no ``FORMAT`` is specified, the output will exactly match the input. By default no action is taken and a list of planned changes is printed. Pass ``--commit`` to actually rename files.
+
+In order to keep a good performance profile modules must be enabled explicitly to be used and some modules accept additional flags to control their output.
+ 
+## Installation
+
+```sh
+$ git clone https://github.com/4nickel/bulkrename
+$ cd bulkrename
+$ pip install --user -r requirements.txt
+```
 
 ## Modules
 
@@ -56,7 +64,7 @@ number | The number N of the file
 
 ### regex
 
-> The regex will be run against every file name. You can access any *named* capture group in the format string. Very flexible and powerful.
+The regex will be run against every file name. You can access any *named* capture group in the format string. Very flexible and powerful.
 
 ### stat
 
@@ -117,7 +125,3 @@ Image width and height:
 ```sh
 bulkrename -m image -f '{name}_{width}x{height}{ext}' -- ..files..
 ```
-
-##### TODO
-* More modules
-* Add tests
