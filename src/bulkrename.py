@@ -43,6 +43,7 @@ def same_file(a_file: str, b_file: str):
 
 def move_file(src_file: str, dst_file: str, clobber: bool = False):
     """"Rename a file. Only clobber stuff when asked to."""
+    # NOTE: Yes, there is a race-condition here. Just ignore it for now.
     if not os.path.isfile(src_file):
         raise FileError('no such file: {}'.format(src_file))
     if os.path.isfile(dst_file) and not clobber:
@@ -50,7 +51,7 @@ def move_file(src_file: str, dst_file: str, clobber: bool = False):
     os.rename(src_file, dst_file)
 
 
-def split_dir_file_ext(file_name):
+def split_dir_file_ext(file_name: str):
     """"Split a path into three strings: directory name, file name and extension."""
     split = os.path.splitext(file_name)
     return os.path.dirname(split[0]), os.path.basename(split[0]), split[1]
@@ -71,7 +72,7 @@ class Module(ABC):
         self.args = args
 
     @abstractmethod
-    def placeholders(self, file_name):
+    def placeholders(self, file_name: str):
         """"Create placeholders for the given file."""
         raise NotImplementedError
 
@@ -79,7 +80,7 @@ class Module(ABC):
 class ImageModule(Module):
     """"This module provides renaming based on image metadata."""
 
-    def placeholders(self, file_name):
+    def placeholders(self, file_name: str):
         """"Create placeholders for the given file."""
         img = Image.open(file_name)
         width, height = img.size
@@ -97,7 +98,7 @@ class NumberModule(Module):
         super().__init__(args)
         self.number = args.number
 
-    def placeholders(self, file_name):
+    def placeholders(self, file_name: str):
         """"Create placeholders for the given file."""
         placeholders = {'n': self.number}
         self.number += 1
@@ -116,7 +117,7 @@ class HashModule(Module):
         super().__init__(args)
         self.hash = HashModule.ALGORITHMS[args.algorithm]
 
-    def placeholders(self, file_name):
+    def placeholders(self, file_name: str):
         """"Create placeholders for the given file."""
         digest = self.hash()
         with open(file_name, mode='rb') as fd:
@@ -133,7 +134,7 @@ class RegexModule(Module):
         self.regex = re.compile(args.regex)
         self.keys = [name for name, _ in self.regex.groupindex.items()]
 
-    def placeholders(self, file_name):
+    def placeholders(self, file_name: str):
         """"Create placeholders for the given file."""
         placeholders = {}
         match = self.regex.search(file_name)
@@ -145,7 +146,8 @@ class RegexModule(Module):
 class StatModule(Module):
     """"This module provides renaming based on the `stat` command."""
 
-    def placeholders(self, file_name):
+    def placeholders(self, file_name: str):
+        """"Create placeholders for the given file."""
         stat = os.stat(file_name)
         return {
             'mode': stat.st_mode,
@@ -190,7 +192,7 @@ class MimeModule(Module):
         super().__init__(args)
         self.mime = magic.Magic(mime=True)
 
-    def placeholders(self, file_name):
+    def placeholders(self, file_name: str):
         """"Create placeholders for the given file."""
         mime = self.mime.from_file(file_name)
         if not mime:
@@ -212,7 +214,7 @@ class FontModule(Module):
         '.ttf': ttLib.TTFont,
     }
 
-    def placeholders(self, file_name):
+    def placeholders(self, file_name: str):
         """"Create placeholders for the given file."""
         name, extension = os.path.splitext(file_name)
         font = FontModule.EXTENSIONS[extension]
@@ -263,16 +265,25 @@ class Rename:
         'image': ImageModule,
     }
 
-    def __init__(self, args):
+    def __init__(self, args=None, modules=None):
+        if modules is None:
+            modules = []
+        if args is None:
+            args = {}
+        self.modules = modules
         self.args = args
-        self.modules = []
 
+    @staticmethod
+    def from_arguments(args):
+        """Create a new instance from command-line arguments."""
+        modules = []
         if args.module:
             for module in args.module:
-                if module not in self.MODULES:
+                if module not in Rename.MODULES:
                     raise UnknownModuleException(module)
-                constructor = self.MODULES[module]
-                self.modules.append(constructor(args))
+                constructor = Rename.MODULES[module]
+                modules.append(constructor(args))
+        return Rename(args=args, modules=modules)
 
     def move_file(self, src: str, dst: str, status):
         """
@@ -313,7 +324,7 @@ class Rename:
             dst = '{}/{}'.format(path, name)
         return src, dst
 
-    def create_name(self, file_name):
+    def create_name(self, file_name: str):
         """Generate a new name for the file."""
 
         path, name, ext = split_dir_file_ext(file_name)
@@ -340,6 +351,10 @@ class Rename:
         status = []
         for src, dst in moves:
             self.move_file(src, dst, status)
+        return moves, status
+
+    def print_report(self, moves, status):
+        """Print a report of resulting moves and status."""
         self.summarize(zip(moves, status))
 
 
@@ -356,7 +371,7 @@ class ModuleArgumentAction(argparse.Action):
 def main():
     """"
     Main entry point.
-    Exists mostly just to shut up pylint about globals and constants.
+    Exists mostly to shut up pylint about globals and constants.
     """
 
     description = 'Rename files by numbering them.'
@@ -383,8 +398,9 @@ def main():
     parser.add_argument('FILE', type=str, help='file to rename', nargs='*')
 
     args = parser.parse_args()
-    r = Rename(args)
-    r.run()
+    r = Rename.from_arguments(args)
+    moves, status = r.run()
+    r.print_report(moves, status)
 
 
 main()
