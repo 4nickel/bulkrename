@@ -1,4 +1,4 @@
-env/
-.envrc
-bulkrename
-.huk
+/env/
+/.envrc
+/bulkrename
+/.huk

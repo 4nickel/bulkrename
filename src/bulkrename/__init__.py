@@ -368,7 +368,7 @@ class ModuleArgumentAction(argparse.Action):
         namespace.module.append(module)
 
 
-def main():
+def bulkrename_cli():
     """"
     Main entry point.
     Exists mostly to shut up pylint about globals and constants.
@@ -403,4 +403,5 @@ def main():
     r.print_report(moves, status)
 
 
-main()
+if __name__ == "main":
+    bulkrename_cli()
