@@ -21,10 +21,10 @@ jobs:
       run: sudo apt-get install python3-venv
 
     - name: Create virtual environment
-      run: python3 -m venv env && source env/bin/activate
+      run: python3 -m venv env
 
     - name: Set up requirements
-      run: pip3 install -r requirements.txt
+      run: source env/bin/activate && pip3 install -r requirements.txt
 
     - name: Run tests
-      run: pytest src/test.py
+      run: source env/bin/activate && pytest src/test.py
