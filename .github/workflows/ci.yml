@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@master
 
     - name: Set up dependencies
-      run: apt-get install python3-venv
+      run: sudo apt-get install python3-venv
 
     - name: Create virtual environment
       run: python3 -m venv env && source env/bin/activate
