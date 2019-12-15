@@ -17,8 +17,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@master
 
+    - name: Create virtual environment
+      run: python3 -m venv env && source env/bin/activate
+
     - name: Install requirements
-      run: pip3 install --user -r requirements.txt
+      run: pip3 install -r requirements.txt
 
     - name: Run tests
       run: pytest src/test.py
