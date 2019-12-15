@@ -27,7 +27,7 @@ jobs:
       run: source env/bin/activate && pip3 install -r requirements.txt
 
     - name: Run lints
-      run: source env/bin/activate && pylint --rcfile=.pylintrc src
+      run: source env/bin/activate && pylint --rcfile=.pylintrc src/bulkrename
 
     - name: Run tests
       run: source env/bin/activate && pytest src/test.py
