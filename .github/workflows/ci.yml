@@ -1,0 +1,24 @@
+name: CI
+
+on: [push]
+
+jobs:
+
+  test:
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Install requirements
+      run: pip3 install --user -r requirements.txt
+
+    - name: Run tests
+      run: pytest src/test.py
