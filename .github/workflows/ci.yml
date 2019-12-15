@@ -17,10 +17,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@master
 
+    - name: Set up dependencies
+      run: apt-get install python3-venv
+
     - name: Create virtual environment
       run: python3 -m venv env && source env/bin/activate
 
-    - name: Install requirements
+    - name: Set up requirements
       run: pip3 install -r requirements.txt
 
     - name: Run tests
